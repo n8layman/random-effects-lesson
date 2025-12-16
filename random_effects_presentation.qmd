@@ -566,7 +566,7 @@ ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id,
 
 ---
 
-## Question 1: Between-Person Effect {.smaller}
+## Q1: Between-Person Effect {.smaller}
 
 **"Do students who sleep more score better?"**
 
@@ -601,7 +601,7 @@ ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson)) +
 
 ---
 
-## Question 2: Within-Person Effects {.smaller}
+## Q2: Within-Person Effects {.smaller}
 
 **"When each student sleeps more, do they score better?"**
 
@@ -643,14 +643,9 @@ for(i in 1:6) {
 
 ---
 
-## Question 3: Average Within-Person Effect {.smaller}
+## Q3: Average Within-Person Effect {.smaller}
 
 **"On average across all students, how much does sleeping more help?"**
-
-```r
-# Hierarchical model (average within-person effect)
-model <- lmer(score ~ sleep + (sleep | student))
-```
 
 ```{r}
 #| echo: false
