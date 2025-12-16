@@ -643,7 +643,14 @@ for(i in 1:6) {
 
 ---
 
-## Visualizing the Answer {.smaller}
+## Question 3: Average Within-Person Effect {.smaller}
+
+**"On average across all students, how much does sleeping more help?"**
+
+```r
+# Hierarchical model (average within-person effect)
+model <- lmer(score ~ sleep + (sleep | student))
+```
 
 ```{r}
 #| echo: false
@@ -652,10 +659,20 @@ for(i in 1:6) {
 model_final <- lmer(score_simpson ~ sleep_hours + (sleep_hours | student_id), data = data_simpson)
 fixed_effect <- fixef(model_final)[2]
 
+# Create a line representing the fixed effect (average within-person slope)
+# using the intercept and slope from the hierarchical model
+fixed_intercept <- fixef(model_final)[1]
+fixed_slope <- fixef(model_final)[2]
+avg_line <- data.frame(
+  sleep_hours = seq(min(data_simpson$sleep_hours), max(data_simpson$sleep_hours), length.out = 100),
+  fitted = fixed_intercept + fixed_slope * seq(min(data_simpson$sleep_hours), max(data_simpson$sleep_hours), length.out = 100)
+)
+
 ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
   geom_point(size = 5, alpha = 0.7) +
   geom_line(linewidth = 1.5, alpha = 0.6) +
-  geom_smooth(aes(group = 1), method = "lm", se = TRUE, color = "black", linewidth = 3, linetype = "dashed") +
+  geom_line(data = avg_line, aes(x = sleep_hours, y = fitted, group = 1),
+            color = "black", linewidth = 3, linetype = "dashed", inherit.aes = FALSE) +
   annotate("text", x = 6.5, y = 82,
            label = "Average within-person effect",
            color = "black", size = 7, fontface = "bold") +
@@ -664,7 +681,7 @@ ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id,
            color = "darkgreen", size = 7, fontface = "bold") +
   labs(
     title = "The dashed line = Population average of individual slopes",
-    x = "Hours of Sleep", 
+    x = "Hours of Sleep",
     y = "Test Score",
   ) +
   theme_minimal(base_size = 18) +
