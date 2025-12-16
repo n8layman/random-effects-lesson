@@ -1,0 +1,726 @@
+---
+title: "Surprising Study: Less Sleep Improves Test Scores?"
+subtitle: "A Statistical Mystery"
+format:
+  revealjs:
+    theme: default
+    slide-number: true
+    preview-links: auto
+    embed-resources: true
+    output-file: index.html
+    output-dir: docs
+---
+
+## Breaking News! {.smaller}
+
+::: {.callout-tip}
+## New Study Shows: Less Sleep = Higher Test Scores!
+:::
+
+**Study Design:**
+
+- Recruited 6 students with naturally different sleep patterns
+- Tracked each student for 5 nights
+- Recorded their sleep hours and next-day test performance
+- Total: 30 observations (6 students × 5 nights each)
+
+::: {.callout-warning}
+**Note:** This is simulated data for teaching purposes only
+:::
+
+**The shocking result...**
+
+---
+
+## The Data: All Students Combined {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(ggplot2)
+library(dplyr)
+library(lme4)
+
+set.seed(456)
+n_students_sp <- 6
+
+# Observational study design: We recruited students with different natural sleep patterns
+# Then tracked them for 5 nights, recording their sleep and next-day test performance
+# Each student's 5 nights cluster around their typical sleep amount
+
+student_info <- data.frame(
+  student_id = paste0("Student ", LETTERS[1:6]),
+  baseline = c(90, 75, 60, 45, 30, 15),  # Larger baseline variation
+  typical_sleep = c(3, 4, 5, 6, 7, 8),  # Student A naturally sleeps less, F sleeps more
+  slope = c(1, 2, 3, 4, 5, 6)  # Larger slope variation (1 to 6 points per hour)
+)
+
+# Generate 5 measurements per student, varying around their typical sleep
+data_simpson <- data.frame()
+for (i in 1:nrow(student_info)) {
+  student_data <- data.frame(
+    student_id = student_info$student_id[i],
+    student_num = i,
+    # Each student measured at 5 nights: typical ± variation
+    sleep_hours = student_info$typical_sleep[i] + c(-1.5, -0.75, 0, 0.75, 1.5),
+    baseline = student_info$baseline[i],
+    slope = student_info$slope[i]
+  )
+  # Score = baseline + benefit from sleep relative to their typical + noise
+  student_data$score_simpson <- student_data$baseline +
+    student_data$slope * (student_data$sleep_hours - student_info$typical_sleep[i]) +
+    rnorm(5, 0, 2.5)
+  data_simpson <- rbind(data_simpson, student_data)
+}
+
+model_aggregate <- lm(score_simpson ~ sleep_hours, data = data_simpson)
+aggregate_slope <- coef(model_aggregate)[2]
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 5, alpha = 0.6, color = "skyblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 2.5) +
+  annotate("text", x = 6.5, y = 85, 
+           label = paste0("Slope = ", round(aggregate_slope, 2), " points per hour"), 
+           color = "red", size = 7, fontface = "bold") +
+  labs(
+    title = "Less Sleep = Better Performance?!",
+    x = "Hours of Sleep", 
+    y = "Test Score"
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(size = 24, face = "bold")
+  )
+```
+
+Each extra hour of sleep **<u>reduces</u>** scores by `r round(abs(aggregate_slope), 1)` points!
+
+---
+
+## Wait... That Seems Wrong {.smaller}
+
+Let's look at each student individually to check if this makes sense.
+
+Maybe there's something we're missing?
+
+---
+
+## Student A {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_A <- filter(data_simpson, student_id == "Student A")
+
+ggplot(student_data_A, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#F8766D") +
+  geom_smooth(method = "lm", se = FALSE, color = "#F8766D", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student A: More sleep = Better scores** ✓
+
+---
+
+## Student B {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_B <- filter(data_simpson, student_id == "Student B")
+
+ggplot(student_data_B, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#00BA38") +
+  geom_smooth(method = "lm", se = FALSE, color = "#00BA38", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student B: More sleep = Better scores** ✓
+
+---
+
+## Student C {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_C <- filter(data_simpson, student_id == "Student C")
+
+ggplot(student_data_C, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#619CFF") +
+  geom_smooth(method = "lm", se = FALSE, color = "#619CFF", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student C: More sleep = Better scores** ✓
+
+---
+
+## Student D {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_D <- filter(data_simpson, student_id == "Student D")
+
+ggplot(student_data_D, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#F564E3") +
+  geom_smooth(method = "lm", se = FALSE, color = "#F564E3", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student D: More sleep = Better scores** ✓
+
+---
+
+## Student E {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_E <- filter(data_simpson, student_id == "Student E")
+
+ggplot(student_data_E, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#B79F00") +
+  geom_smooth(method = "lm", se = FALSE, color = "#B79F00", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student E: More sleep = Better scores** ✓
+
+---
+
+## Student F {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+student_data_F <- filter(data_simpson, student_id == "Student F")
+
+ggplot(student_data_F, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 6, color = "#00BFC4") +
+  geom_smooth(method = "lm", se = FALSE, color = "#00BFC4", linewidth = 2) +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Student F: More sleep = Better scores** ✓
+
+---
+
+## Hold On... {.smaller}
+
+::: {.callout-warning}
+## Every single student shows: More sleep = Better performance
+
+But the aggregate data showed: Less sleep = Better performance!
+:::
+
+**How is this possible?**
+
+Let's look at that first plot again...
+
+---
+
+## Back to the Aggregate View {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 5, alpha = 0.6, color = "skyblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 2.5) +
+  annotate("text", x = 6.5, y = 85, 
+           label = paste0("Slope = ", round(aggregate_slope, 2)), 
+           color = "red", size = 7, fontface = "bold") +
+  labs(
+    title = "Negative relationship overall",
+    x = "Hours of Sleep", 
+    y = "Test Score"
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(size = 24, face = "bold")
+  )
+```
+
+**Question:** How can the overall trend be negative when every individual trend is positive?
+
+---
+
+## Let's Color by Student {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_smooth(aes(group = 1), method = "lm", se = TRUE, color = "red", linewidth = 2.5) +
+  labs(
+    title = "Same data, now colored by student",
+    x = "Hours of Sleep", 
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 20, face = "bold")
+  )
+```
+
+**Notice anything?**
+
+---
+
+## Connect the Dots {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  geom_smooth(aes(group = 1), method = "lm", se = TRUE, color = "red", linewidth = 2.5) +
+  labs(
+    title = "Each student has a positive slope!",
+    x = "Hours of Sleep", 
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 20, face = "bold")
+  )
+```
+
+**The Mystery:** Students with different baseline scores have different sleep patterns!
+
+---
+
+## This is Simpson's Paradox {.smaller}
+
+::: {.incremental}
+- Each student has their own **baseline performance level**
+- In our small sample, students who naturally slept more happened to have different baseline scores
+- This creates a **confounding variable** between sleep and baseline performance
+- The aggregate trend reverses the individual trends
+- **Within each student:** More sleep helps performance
+- **Across students:** By chance, baseline scores were correlated with natural sleep patterns
+:::
+
+---
+
+## So How Do Students Differ? {.smaller}
+
+When we have repeated measures, students can differ in **two fundamental ways**:
+
+::: {.incremental}
+1. **Baseline performance** (where their line starts) → **Random Intercepts**
+2. **Response to sleep** (how steep their line is) → **Random Slopes**
+:::
+
+::: {.fragment}
+**Let's build up the model step by step to see how we capture these differences...**
+:::
+
+---
+
+## Way 1: Different Baselines {.smaller}
+
+**Random Intercept Model:** `lmer(score ~ sleep + (1 | student))`
+
+This model assumes students differ in baseline performance, but respond the same way to sleep.
+
+```{r}
+#| echo: false
+#| warning: false
+# Fit random intercept only model to our data
+model_intercept <- lmer(score_simpson ~ sleep_hours + (1 | student_id), data = data_simpson)
+# Get predictions with common slope
+pred_intercept <- data_simpson %>%
+  mutate(fitted = predict(model_intercept, re.form = NA) + ranef(model_intercept)$student_id[student_num, 1])
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_line(data = pred_intercept, aes(y = fitted), linewidth = 1.5, alpha = 0.8) +
+  labs(
+    title = "Parallel Lines: Different baselines, same slope for all",
+    x = "Hours of Sleep",
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold")
+  )
+```
+
+**Each student starts at a different level, but model assumes sleep affects everyone equally**
+
+---
+
+## Way 2: Different Responses {.smaller}
+
+**Random Slope Model:** `lmer(score ~ sleep + (0 + sleep | student))`
+
+This model assumes students start at the same baseline, but respond differently to sleep.
+
+```{r}
+#| echo: false
+#| warning: false
+# Fit random slope only model (no random intercepts)
+model_slope <- lmer(score_simpson ~ sleep_hours + (0 + sleep_hours | student_id), data = data_simpson)
+# Get predictions with individual slopes but common intercept
+pred_slope <- data_simpson %>%
+  mutate(fitted = predict(model_slope))
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_line(data = pred_slope, aes(y = fitted), linewidth = 1.5, alpha = 0.8) +
+  labs(
+    title = "Crossing Lines: Same baseline, different slopes",
+    x = "Hours of Sleep",
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold")
+  )
+```
+
+**Some students are more "sleep-sensitive" (steeper slopes) than others**
+
+---
+
+## Way 3: Both Together {.smaller}
+
+**Random Slopes & Intercepts Model:** `lmer(score ~ sleep + (sleep | student))`
+
+This model allows students to differ in both baseline AND their response to sleep.
+
+```{r}
+#| echo: false
+#| warning: false
+# Fit full random slopes and intercepts model
+model_full <- lmer(score_simpson ~ sleep_hours + (sleep_hours | student_id), data = data_simpson)
+# Get predictions with individual slopes and intercepts
+pred_full <- data_simpson %>%
+  mutate(fitted = predict(model_full))
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_line(data = pred_full, aes(y = fitted), linewidth = 1.5, alpha = 0.8) +
+  labs(
+    title = "Non-parallel Lines: Different baselines AND different slopes",
+    x = "Hours of Sleep",
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold")
+  )
+```
+
+**This captures both sources of variation we see in the data**
+
+---
+
+## Why Not Always Use the Full Model? {.smaller}
+
+**The full model `(sleep | student)` seems best, so why use simpler models?**
+
+::: {.incremental}
+1. **Convergence issues** - Complex models may fail to fit with small samples or little variation
+2. **Overfitting** - Estimating too many parameters with limited data
+3. **Parsimony** - Simpler models are easier to interpret and communicate
+4. **Theory-driven choices** - Sometimes you know slopes shouldn't vary (e.g., physical laws)
+5. **Data don't support it** - If there's no slope variation, the model won't benefit from random slopes
+:::
+
+::: {.callout-note}
+**Best practice:** Start complex, simplify if needed. Use model comparison (AIC, BIC, likelihood ratio tests) to guide decisions.
+:::
+
+---
+
+## The Complete Picture {.smaller}
+
+**Our data shows BOTH sources of variation:**
+
+```{r}
+#| echo: false
+#| warning: false
+# Show the raw data with individual regression lines
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 1.5, alpha = 0.6) +
+  annotate("text", x = 3, y = 85, label = "Different baselines\n(intercepts vary)",
+           color = "darkblue", size = 6, fontface = "bold") +
+  annotate("text", x = 7, y = 40, label = "Different responses\n(slopes vary)",
+           color = "darkred", size = 6, fontface = "bold") +
+  labs(
+    title = "Reality: Students differ in BOTH baseline AND sleep sensitivity",
+    x = "Hours of Sleep",
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold")
+  )
+```
+
+**Random intercepts (baselines) + Random slopes (sleep sensitivity) = Full model**
+
+---
+
+## Wait... What Question Are We Asking? {.smaller}
+
+::: {.callout-warning}
+## "Does sleep affect test performance?" is actually THREE different questions!
+:::
+
+::: {.incremental}
+1. **Between-person:** "Do students who generally sleep more score better than students who sleep less?"
+2. **Within-person:** "When a specific student sleeps more, do they score better?"
+3. **Average within-person:** "On average across all students, how much does sleeping more help?"
+:::
+
+**Each question requires a different model and gives a different answer!**
+
+---
+
+## Question 1: Between-Person Effect {.smaller}
+
+**"Do students who sleep more score better?"**
+
+```r
+# Aggregate model (between-person only)
+model_between <- lm(score ~ sleep_hours)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+model_aggregate_show <- lm(score_simpson ~ sleep_hours, data = data_simpson)
+between_slope <- coef(model_aggregate_show)[2]
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson)) +
+  geom_point(size = 5, alpha = 0.6, color = "skyblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 2.5) +
+  annotate("text", x = 6.5, y = 85, 
+           label = paste0("Between-person effect = ", round(between_slope, 2)), 
+           color = "red", size = 6, fontface = "bold") +
+  labs(x = "Hours of Sleep", y = "Test Score") +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black")
+  )
+```
+
+**Answer: NO** → This is confounded by individual differences!
+
+---
+
+## Question 2: Within-Person Effects {.smaller}
+
+**"When each student sleeps more, do they score better?"**
+
+```r
+# Look at each individual separately
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 6
+library(patchwork)
+
+plots <- list()
+students <- unique(data_simpson$student_id)
+colors <- c("#F8766D", "#00BA38", "#619CFF", "#F564E3", "#B79F00", "#00BFC4")
+
+for(i in 1:6) {
+  student_data <- filter(data_simpson, student_id == students[i])
+
+  plots[[i]] <- ggplot(student_data, aes(x = sleep_hours, y = score_simpson)) +
+    geom_point(size = 4, color = colors[i]) +
+    geom_smooth(method = "lm", se = FALSE, color = colors[i], linewidth = 1.5) +
+    labs(title = students[i], x = NULL, y = NULL) +
+    theme_minimal(base_size = 12) +
+    theme(
+      panel.background = element_rect(fill = "white"),
+      plot.background = element_rect(fill = "white"),
+      text = element_text(color = "black"),
+      axis.text = element_text(color = "black"),
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+    )
+}
+
+(plots[[1]] | plots[[2]] | plots[[3]]) / (plots[[4]] | plots[[5]] | plots[[6]])
+```
+
+**Answer: YES** → Every student benefits! But effects vary (some steep, some flat)
+
+---
+
+## Visualizing the Answer {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+# Fit the full hierarchical model to get the average within-person effect
+model_final <- lmer(score_simpson ~ sleep_hours + (sleep_hours | student_id), data = data_simpson)
+fixed_effect <- fixef(model_final)[2]
+
+ggplot(data_simpson, aes(x = sleep_hours, y = score_simpson, color = student_id, group = student_id)) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_line(linewidth = 1.5, alpha = 0.6) +
+  geom_smooth(aes(group = 1), method = "lm", se = TRUE, color = "black", linewidth = 3, linetype = "dashed") +
+  annotate("text", x = 6.5, y = 82,
+           label = "Average within-person effect",
+           color = "black", size = 7, fontface = "bold") +
+  annotate("text", x = 6.5, y = 75,
+           label = paste0("+", round(fixed_effect, 2), " points per hour"),
+           color = "darkgreen", size = 7, fontface = "bold") +
+  labs(
+    title = "The dashed line = Population average of individual slopes",
+    x = "Hours of Sleep", 
+    y = "Test Score",
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"),
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold")
+  )
+```
+
+**The dashed line represents the average effect WITHIN students**
+
+---
+
+## Why This Matters {.smaller}
+
+::: {.callout-important}
+## The Research Question Determines The Model
+:::
+
+::: {.incremental}
+- **"Do people who sleep more perform better?"** → Between-person (observational, confounded)
+- **"Does sleeping more help performance?"** → Within-person (causal, what we want!)
+:::
+
+**The hierarchical model:**
+- Separates within-person from between-person effects
+- Gives us the average causal effect we care about
+- Accounts for individual differences
+- Provides the right answer to "does sleep help?"
+
+---
+
+## Key Lessons {.smaller}
+
+::: {.incremental}
+1. **Simpson's Paradox is real** - Aggregate trends can completely reverse individual trends
+2. **Ignoring group structure = Wrong conclusions** - We'd tell students to sleep less!
+3. **Random effects capture reality:**
+   - Random intercepts = People differ in baseline
+   - Random slopes = People differ in how they respond
+4. **The fixed effect in a hierarchical model = Average within-group effect**
+5. **This answers our causal question:** "Does sleep help performance?" → YES, ~3.5 points/hour on average
+6. **The model formula matters:**
+   - `lm(y ~ x)` - Between-person only (WRONG here)
+   - `lmer(y ~ x + (1 | id))` - Different baselines
+   - `lmer(y ~ x + (x | id))` - Different baselines + responses (BEST)
+:::
+
+---
+
+## Questions?
+
+**The moral of the story:** When you have repeated measures, you MUST account for individual differences, or you might conclude the exact opposite of the truth!
+
+---
